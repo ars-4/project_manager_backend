@@ -95,6 +95,7 @@ class SalaryInvoice(BaseModel):
     title = models.CharField(max_length=244, null=True)
     amount = models.CharField(max_length=244, null=True)
     status = models.CharField(max_length=244, null=True, choices=(('due', 'due'), ('paid', 'paid')))
+    previous_dues = models.CharField(max_length=244, null=True, default='0')
 
     def __str__(self):
         return self.person.user.username
@@ -109,6 +110,7 @@ class Payment(BaseModel):
         ('expense', 'expense'),
         ('profit', 'profit')
     ))
+    amount = models.CharField(max_length=244, null=True, default=0)
 
     def __str__(self):
         return self.title

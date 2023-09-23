@@ -8,12 +8,13 @@ from django.conf import settings
 
 router = DefaultRouter()
 router.register('employees', views.EmployeeView, basename='Employees')
+router.register('salary_invoices', views.SalaryInvoiceView, basename='Salary Invoices')
 router.register('clients', views.ClientView, basename='Clients')
 router.register('attendances', views.AttendanceView, basename='Attendances')
 router.register('tasks', views.TaskView, basename='Tasks')
 router.register('payments', views.PaymentView, basename='Payments')
 router.register('projects', views.ProjectView, basename='Projects')
-router.register('salary_invoices', views.SalaryInvoiceView, basename='Salry Invoices')
+router.register('project_invoices', views.ProjectInvoiceView, basename='Project Invoices')
 
 
 urlpatterns = [

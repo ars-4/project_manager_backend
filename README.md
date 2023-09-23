@@ -33,6 +33,13 @@ Create a `Person` object and add newly created superuser to `Admin` group.
 python manage.py runserver
 ```
 
+<br>
+
+![project_invoices](/screenshots/project_invoice_list.png)
+
+<br>
+
+
 ### More Information
 For [More Information](https://djangoproject.com/).
 

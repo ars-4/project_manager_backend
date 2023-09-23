@@ -108,7 +108,27 @@ class EmployeeView(ModelViewSet):
             status=403
 
         return Response(data, status=status)
+    
 
+class SalaryInvoiceView(ModelViewSet):
+    queryset = SalaryInvoice.objects.all()
+    serializer_class = SalaryInvoiceSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = '__all__'
+
+    def create(self, request):
+        data = request.data
+        serializer = SalaryInvoiceSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        payment = Payment.objects.create(
+            amount=data.get('amount'),
+            title='employee_monthly_salary',
+            description=data.get('description'),
+            type='expense'
+        )
+        payment.save()
+        return Response(serializer.data, status=201)
 
 
 class AttendanceView(ModelViewSet):
@@ -149,6 +169,27 @@ class ProjectView(ModelViewSet):
     filterset_fields = '__all__'
 
 
+class ProjectInvoiceView(ModelViewSet):
+    queryset = ProjectInvoice.objects.all()
+    serializer_class = ProjectInvoiceSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = '__all__'
+
+    def create(self, request):
+        data = request.data
+        serializer = ProjectInvoiceSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        payment = Payment.objects.create(
+            amount=data.get('amount'),
+            title='project_invoice',
+            description=data.get('description'),
+            type='profit'
+        )
+        payment.save()
+        return Response(serializer.data, status=201)
+
+
 
 class TaskView(ModelViewSet):
     queryset = Task.objects.all()
@@ -169,12 +210,3 @@ def update_task(request, pk):
 class PaymentView(ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
-
-
-
-class SalaryInvoiceView(ModelViewSet):
-    queryset = SalaryInvoice.objects.all()
-    serializer_class = SalaryInvoiceSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = '__all__'
-
