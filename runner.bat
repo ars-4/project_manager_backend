@@ -1,0 +1,1 @@
+wsl source env/bin/activate; gunicorn CManager.wsgi:application & daphne CManager.asgi:application

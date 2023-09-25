@@ -20,6 +20,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'channels',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -30,7 +31,9 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework',
     'core.apps.CoreConfig',
-    'corsheaders'
+    'chats',
+    'corsheaders',
+    'channels_postgres',
 ]
 
 MIDDLEWARE = [
@@ -49,6 +52,20 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',  # <-- And here
     ],
+}
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_postgres.core.PostgresChannelLayer',
+        'CONFIG': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'manager',
+            'USER': 'manager',
+            'PASSWORD': 'password',
+            'HOST': 'localhost',
+            'PORT': '5432',
+        },
+    },
 }
 
 ROOT_URLCONF = 'CManager.urls'
@@ -75,11 +92,21 @@ WSGI_APPLICATION = 'CManager.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+	'default': {
+		'ENGINE': 'django.db.backends.postgresql_psycopg2',
+		'NAME': 'manager',
+		'USER': 'manager',
+		'PASSWORD': 'password',
+		'HOST': 'localhost',
+		'PORT': '5432',
+	}
 }
 
 
