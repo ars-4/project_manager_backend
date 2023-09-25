@@ -7,9 +7,9 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
 
 from core.utils import get_or_create_token
-from core.serializers import EmployeeSerializer, ClientSerializer, AttendanceSerializer, ProjectSerializer, ProjectInvoiceSerializer, SalaryInvoiceSerializer, TaskSerializer, PaymentSerializer
-from core.models import Employee, Client, Attendance, Task, Payment, Project, ProjectInvoice, SalaryInvoice
-# Create your views here.
+from core.serializers import PersonSerializer, AttendanceSerializer, ProjectSerializer, ProjectInvoiceSerializer, SalaryInvoiceSerializer, TaskSerializer, PaymentSerializer
+from core.models import Person, Attendance, Task, Payment, Project, ProjectInvoice, SalaryInvoice
+from chats.models import Room
 
 
 
@@ -43,14 +43,15 @@ def login(request):
 
 @api_view(['GET'])
 def get_profile(request):
-    employee = Employee.objects.get(user=request.user)
-    serializer = EmployeeSerializer(employee, many=False)
+    employee = Person.objects.get(user=request.user)
+    print(employee)
+    serializer = PersonSerializer(employee, many=False)
     return Response(serializer.data, status=200)
 
 
 @api_view(['POST'])
 def update_profile(request):
-    employee = Employee.objects.get(user=request.user)
+    employee = Person.objects.get(user=request.user)
     data = request.data
     employee.first_name = data.get('first_name')
     employee.last_name = data.get('last_name')
@@ -62,41 +63,41 @@ def update_profile(request):
 
 
 class EmployeeView(ModelViewSet):
-    queryset = Employee.objects.all()
-    serializer_class = EmployeeSerializer
-    permission_classes = [IsAuthenticated]
+    queryset = Person.objects.filter(type='employee')
+    serializer_class = PersonSerializer
+    # permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # employees = Employee.objects.filter(designation='None')
-        # return employees
+        queryset = Person.objects.filter(type='employee')
         if self.request.user.username == 'admin':
             # group = Group.objects.get(name='admin')
             # print(self.request.user.groups[0])
-            return self.queryset
+            return queryset
         else:
-            return Response({'error':'true', 'msg':'forbidden'}, status=403)
+            # return Response({'error':'true', 'msg':'forbidden'}, status=403)
+            return queryset
 
     def create(self, request):
         post = request.data
         status = 201
         data = {}
-        if request.user.username == 'admin':
+        if self.request.user.username == 'admin':
             try:
                 user = User.objects.create_user(
                     username=post['user'], email=post['email'], password=post['pass'],
                     first_name=post['first_name'], last_name=post['last_name']
                     )
                 user.save()
-                employee = Employee.objects.create(
+                employee = Person.objects.create(
                     profile_picture='/employees/Black.jpg',
                     user=user, first_name=user.first_name, last_name=user.last_name, email=user.email,
                     mobile=post.get('mobile'), address=post.get('address'), city=post.get('city'),
-                    salary=post.get('salary'), designation=post.get('designation')
+                    salary=post.get('salary'), designation=post.get('designation'), type='employee'
                 )
                 employee.save()
-                invoice = SalaryInvoice.objects.create(person=employee, title='initial_auto_invoice', amount='0', status='paid')
+                invoice = SalaryInvoice.objects.create(employee=employee, title='initial_auto_invoice', amount='0', status='paid')
                 invoice.save()
-                serializer = EmployeeSerializer(employee, many=False)
+                serializer = PersonSerializer(employee, many=False)
                 data = {'error':'false', 'msg':'employee_creation_successful', 'data':serializer.data}
                 status = 201
             except Exception as error:
@@ -145,7 +146,7 @@ class AttendanceView(ModelViewSet):
 
     def create(self, request):
         attendance = Attendance.objects.create(
-            employee=Employee.objects.get(id=request.data.get('id')),
+            employee=Person.objects.get(id=request.data.get('id')),
             status=request.data.get('status')
         )
         attendance.save()
@@ -157,8 +158,8 @@ class AttendanceView(ModelViewSet):
 
 
 class ClientView(ModelViewSet):
-    queryset = Client.objects.all()
-    serializer_class = ClientSerializer
+    queryset = Person.objects.filter(type='client')
+    serializer_class = PersonSerializer
 
 
 
@@ -167,6 +168,33 @@ class ProjectView(ModelViewSet):
     serializer_class = ProjectSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = '__all__'
+
+    def create(self, request):
+        data = request.data
+        project = Project.objects.create(
+            title = data.get('title'),
+            description = data.get('description'),
+            duration_start = data.get('duration_start'),
+            duration_end = data.get('duration_end'),
+            amount = data.get('amount'),
+        )
+        project.employees.set(data.get('employees'))
+        project.clients.set(data.get('clients'))
+        project.save()
+        serializer = ProjectSerializer(project, many=False)
+        room = Room.objects.create(
+            name = data.get('title'),
+            description = data.get('description'),
+            project = Project.objects.get(id=serializer.data.get('id')),
+            type = 'public',
+        )
+        room.name = "_".join(room.name.split(" ")).lower()
+        for client in data.get('clients'):
+            room.members.add(client)
+        for employee in data.get('employees'):
+            room.members.add(employee)
+        room.save()
+        return Response(serializer.data, status=201)
 
 
 class ProjectInvoiceView(ModelViewSet):

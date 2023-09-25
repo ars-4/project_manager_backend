@@ -1,28 +1,21 @@
 from rest_framework import serializers
-from core.models import Employee, Client, Attendance, Task, Payment, Project, SalaryInvoice, ProjectInvoice
+from core.models import Person, Attendance, Task, Payment, Project, SalaryInvoice, ProjectInvoice
 from django.contrib.auth.models import Group
 
 
 
-class EmployeeSerializer(serializers.ModelSerializer):
-    employee_username = serializers.StringRelatedField(source='user.username')
-    employee_groups = serializers.StringRelatedField(source='user.groups')
+class PersonSerializer(serializers.ModelSerializer):
+    username = serializers.StringRelatedField(source='user.username')
+    groups = serializers.StringRelatedField(source='user.groups')
     class Meta:
-        model = Employee
-        fields = '__all__'
-
-
-
-class ClientSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Client
+        model = Person
         fields = '__all__'
 
 
 
 class AttendanceSerializer(serializers.ModelSerializer):
     # date_created_gte = serializers.DateTimeField(source='date_created__gte')
-    employee_username = serializers.StringRelatedField(source='employee.user.username')
+    username = serializers.StringRelatedField(source='employee.user.username')
     class Meta:
         model = Attendance
         fields = '__all__'
@@ -45,7 +38,8 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    members_username = serializers.StringRelatedField(source='members', many=True, read_only=True)
+    employees_username = serializers.StringRelatedField(source='employees', many=True, read_only=True)
+    clients_username = serializers.StringRelatedField(source='clients', many=True, read_only=True)
     class Meta:
         model = Project
         fields = '__all__'
