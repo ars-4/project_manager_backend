@@ -1,17 +1,27 @@
 from django.shortcuts import render
 import json
+import datetime
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.http import HttpResponse
-from .models import Room, Person
+from .models import Room, Person, Message
 from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async
 from rest_framework.authtoken.models import Token
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from chats.serializers import RoomSerializer, MessageSerializer
 
 def index(request):
     return render(request, "chats/index.html")
 
 def room(request, room_name):
     return render(request, "chats/room.html", {"room_name": room_name})
+
+@api_view(['GET'])
+def rooms_by_project(request, pk):
+    rooms = Room.objects.filter(project=pk)
+    serializer = RoomSerializer(rooms, many=True)
+    return Response({"rooms": serializer.data}, status=200)
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -38,6 +48,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message = text_data_json["message"]
         token = text_data_json["token"]
         user = 'Anonymous'
+        timestamp = str(datetime.datetime.now()).split(".")[0]
 
         can_user_message = False
         tokens = await database_sync_to_async(Token.objects.all, thread_sensitive=True)()
@@ -51,13 +62,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         # Send message to room group
         await self.channel_layer.group_send(
-            self.room_group_name, {"type": "chat.message", "message": message, 'user': user.username, 'token': token}
+            self.room_group_name, {"type": "chat.message", "message": message, 'user': user.username, 'token': token, 'timestamp': timestamp}
         )
 
     # Receive message from room group
     async def chat_message(self, event):
         message = event["message"]
         token = event["token"]
+        timestamp = str(datetime.datetime.now()).split(".")[0]
 
         user = 'Anonymous'
 
@@ -78,4 +90,4 @@ class ChatConsumer(AsyncWebsocketConsumer):
         
 
         # Send message to WebSocket
-        await self.send(text_data=json.dumps({"message": message, 'user': user.username, 'token': token}))
+        await self.send(text_data=json.dumps({"message": message, 'user': user.username, 'token': token, 'timestamp': timestamp}))

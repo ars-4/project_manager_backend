@@ -27,10 +27,13 @@ def login(request):
     data = {}
     try:
         user = User.objects.get(username=request.data.get('user'))
-        if user.check_password(request.data.get('pass')):
+        person = Person.objects.get(user=user)
+        if user.check_password(request.data.get('pass')) and person.type == 'employee':
             token = get_or_create_token(user)
             status = 200
-            data = { 'error':'false', 'msg':'user_log_in_successful', 'token':str(token)}
+            data = { 'error':'false', 'msg':'user_log_in_successful', 'token':str(token), 'data':person.user.username, 'id': person.id}
+        elif person.type == 'client':
+            return Response({'error': 'true', 'msg': 'no_user'}, status=403)
         else:
             data = {'error': 'true', 'msg': 'wrong_password'}
             status = 403

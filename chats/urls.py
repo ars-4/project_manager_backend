@@ -9,4 +9,5 @@ websocket_urlpatterns = [
 urlpatterns = [
     path("", views.index, name="index"),
     path("<str:room_name>/", views.room, name="room"),
+    path("rooms/<int:pk>/", views.rooms_by_project, name="rooms_byProject"),
 ]
