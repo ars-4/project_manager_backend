@@ -1,3 +1,4 @@
+import json
 from django.contrib.auth.models import User, Group
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -7,8 +8,8 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
 
 from core.utils import get_or_create_token
-from core.serializers import PersonSerializer, AttendanceSerializer, ProjectSerializer, ProjectInvoiceSerializer, SalaryInvoiceSerializer, TaskSerializer, PaymentSerializer
-from core.models import Person, Attendance, Task, Payment, Project, ProjectInvoice, SalaryInvoice
+from core.serializers import PersonSerializer, AttendanceSerializer, ProjectSerializer, ProjectInvoiceSerializer, SalaryInvoiceSerializer, TaskSerializer, PaymentSerializer, TicketSerializer
+from core.models import Person, Attendance, Task, Payment, Project, ProjectInvoice, SalaryInvoice, Ticket
 from chats.models import Room
 
 
@@ -47,7 +48,6 @@ def login(request):
 @api_view(['GET'])
 def get_profile(request):
     employee = Person.objects.get(user=request.user)
-    print(employee)
     serializer = PersonSerializer(employee, many=False)
     return Response(serializer.data, status=200)
 
@@ -55,12 +55,14 @@ def get_profile(request):
 @api_view(['POST'])
 def update_profile(request):
     employee = Person.objects.get(user=request.user)
-    data = request.data
+    data = json.loads(request.data['user'])
     employee.first_name = data.get('first_name')
     employee.last_name = data.get('last_name')
     employee.email = data.get('email')
     employee.address = data.get('address')
     employee.city = data.get('city')
+    if request.data.get('file') is not None:
+        employee.profile_picture = request.data.get('file')
     employee.save()
     return Response({ 'error':'false', 'msg':'update_success' }, status=203)
 
@@ -82,6 +84,7 @@ class EmployeeView(ModelViewSet):
 
     def create(self, request):
         post = request.data
+        post = json.loads(post['employee'])
         status = 201
         data = {}
         if self.request.user.username == 'admin':
@@ -97,6 +100,8 @@ class EmployeeView(ModelViewSet):
                     mobile=post.get('mobile'), address=post.get('address'), city=post.get('city'),
                     salary=post.get('salary'), designation=post.get('designation'), type='employee'
                 )
+                if request.data.get('picture') is not None:
+                    employee.profile_picture = request.data.get('picture')
                 employee.save()
                 invoice = SalaryInvoice.objects.create(employee=employee, title='initial_auto_invoice', amount='0', status='paid')
                 invoice.save()
@@ -241,3 +246,25 @@ def update_task(request, pk):
 class PaymentView(ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
+
+
+class TicketView(ModelViewSet):
+    queryset = Ticket.objects.all()
+    serializer_class = TicketSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = '__all__'
+
+    def create(self, request):
+        serializer = TicketSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        project = Project.objects.get(id=request.data.get('project'))
+        task = Task.objects.create(
+            title = request.data.get('title'),
+            description = request.data.get('description') or 'null',
+            status='pending',
+            project=project
+        )
+        task.assigned_to.set(project.employees.all())
+        task.save()
+        return Response(serializer.data, status=201)

@@ -102,3 +102,13 @@ class Payment(BaseModel):
 
     def __str__(self):
         return self.title
+
+
+class Ticket(BaseModel):
+    title = models.CharField(max_length=244, null=True)
+    description = models.TextField(null=True)
+    project = models.ForeignKey(Project, null=True, on_delete=models.CASCADE)
+    status = models.CharField(max_length=244, null=True, choices=(('open', 'open'), ('closed', 'closed')), default='open')
+
+    def __str__(self):
+        return self.title

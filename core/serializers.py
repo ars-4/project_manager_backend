@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from core.models import Person, Attendance, Task, Payment, Project, SalaryInvoice, ProjectInvoice
+from core.models import Person, Attendance, Task, Payment, Project, SalaryInvoice, ProjectInvoice, Ticket
 from django.contrib.auth.models import Group
 
 
@@ -55,4 +55,10 @@ class ProjectInvoiceSerializer(serializers.ModelSerializer):
 class SalaryInvoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = SalaryInvoice
+        fields = '__all__'
+
+
+class TicketSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ticket
         fields = '__all__'
