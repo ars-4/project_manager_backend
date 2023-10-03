@@ -15,6 +15,7 @@ router.register('tasks', views.TaskView, basename='Tasks')
 router.register('payments', views.PaymentView, basename='Payments')
 router.register('projects', views.ProjectView, basename='Projects')
 router.register('project_invoices', views.ProjectInvoiceView, basename='Project Invoices')
+router.register('tickets', views.TicketView, basename='Tickets')
 
 
 urlpatterns = [
